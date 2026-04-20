@@ -20,9 +20,10 @@
 
 	<frame id="frame3">
 		<liveitem>
-			<text origin="background" align="center" line-align="center" text-valign="bottom" margin-bottom="16">
+			<text origin="background" align="center" line-align="center" text-valign="bottom" margin-bottom="32">
 				<str size="22" bold="on" shadow="on" color="#ffffff">Ported by Mcall</str>
-				<br/>
+			</text>
+			<text origin="background" align="center" line-align="center" text-valign="bottom" margin-bottom="12">
 				<str size="16" bold="on" shadow="on" color="#cccccc">Version 1.0</str>
 			</text>
 		</liveitem>
