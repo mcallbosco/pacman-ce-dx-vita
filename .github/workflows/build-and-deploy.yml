@@ -1,0 +1,67 @@
+name: Build VPK and Deploy Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: vitasdk/vitasdk:latest
+    outputs:
+      vpk-name: pacmancedx.vpk
+    steps:
+      - name: Install build tools
+        run: apk add --no-cache cmake make bash git
+
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      - name: Stage Pages site (docs/ + freshly built VPK)
+        run: |
+          mkdir -p _site
+          cp -r docs/. _site/
+          cp build/pacmancedx.vpk _site/pacmancedx.vpk
+
+      - name: Upload VPK as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pacmancedx-vpk
+          path: build/pacmancedx.vpk
+          if-no-files-found: error
+
+      - name: Upload Pages artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
