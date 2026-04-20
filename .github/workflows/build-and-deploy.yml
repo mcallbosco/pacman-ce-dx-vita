@@ -17,10 +17,12 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  VITASDK: /usr/local/vitasdk
+  # Install under $HOME so we don't need sudo and bootstrap-vitasdk.sh can
+  # create the dir itself (it refuses to write into a pre-existing dir).
+  VITASDK: /home/runner/vitasdk
   # Bump this when vitaGL or our code starts depending on a newer SDK feature
   # (e.g. new SCE_GXM_INITIALIZE_FLAG_*) so cached SDKs get invalidated.
-  VITASDK_CACHE_KEY: vitasdk-2026-04
+  VITASDK_CACHE_KEY: vitasdk-2026-04b
 
 jobs:
   build:
@@ -43,8 +45,10 @@ jobs:
       - name: Install VitaSDK (fresh, with up-to-date vita-headers)
         if: steps.cache-vitasdk.outputs.cache-hit != 'true'
         run: |
-          sudo mkdir -p "$VITASDK"
-          sudo chown -R "$(id -u):$(id -g)" "$VITASDK"
+          # Don't pre-create $VITASDK — bootstrap-vitasdk.sh aborts if it
+          # already exists. Just make sure no stale dir is sitting around
+          # from a partial cache restore.
+          rm -rf "$VITASDK"
           git clone --depth 1 https://github.com/vitasdk/vdpm /tmp/vdpm
           cd /tmp/vdpm
           ./bootstrap-vitasdk.sh
