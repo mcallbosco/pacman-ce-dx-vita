@@ -1,15 +1,15 @@
-# Build outputs
-build/
-build.bak/
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile
+# Build outputs (anchored so we don't clobber the hand-written Makefiles
+# inside lib/vitaGL/ and lib/vitaGL_clean/)
+/build/
+/build.bak/
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake
 *.elf
 *.velf
-*.bin
-*.sfo
-eboot.bin
+/*.bin
+/*.sfo
+/eboot.bin
 
 # Crash dumps + logs
 coredump*
