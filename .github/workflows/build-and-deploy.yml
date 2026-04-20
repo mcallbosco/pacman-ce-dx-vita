@@ -1,0 +1,95 @@
+name: Build VPK and Deploy Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  # Install under $HOME so we don't need sudo and bootstrap-vitasdk.sh can
+  # create the dir itself (it refuses to write into a pre-existing dir).
+  VITASDK: /home/runner/vitasdk
+  # Bump this when vitaGL or our code starts depending on a newer SDK feature
+  # (e.g. new SCE_GXM_INITIALIZE_FLAG_*) so cached SDKs get invalidated.
+  VITASDK_CACHE_KEY: vitasdk-2026-04b
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install host build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential git curl xz-utils python3
+
+      - name: Cache VitaSDK
+        id: cache-vitasdk
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.VITASDK }}
+          key: ${{ env.VITASDK_CACHE_KEY }}
+
+      - name: Install VitaSDK (fresh, with up-to-date vita-headers)
+        if: steps.cache-vitasdk.outputs.cache-hit != 'true'
+        run: |
+          # Don't pre-create $VITASDK — bootstrap-vitasdk.sh aborts if it
+          # already exists. Just make sure no stale dir is sitting around
+          # from a partial cache restore.
+          rm -rf "$VITASDK"
+          git clone --depth 1 https://github.com/vitasdk/vdpm /tmp/vdpm
+          cd /tmp/vdpm
+          ./bootstrap-vitasdk.sh
+          ./install-all.sh
+
+      - name: Add VitaSDK to PATH
+        run: echo "$VITASDK/bin" >> "$GITHUB_PATH"
+
+      - name: Configure
+        run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build -j"$(nproc)"
+
+      - name: Stage Pages site (docs/ + freshly built VPK)
+        run: |
+          mkdir -p _site
+          cp -r docs/. _site/
+          cp build/pacmancedx.vpk _site/pacmancedx.vpk
+
+      - name: Upload VPK as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pacmancedx-vpk
+          path: build/pacmancedx.vpk
+          if-no-files-found: error
+
+      - name: Upload Pages artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
