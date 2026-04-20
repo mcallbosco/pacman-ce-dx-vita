@@ -16,24 +16,48 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+env:
+  VITASDK: /usr/local/vitasdk
+  # Bump this when vitaGL or our code starts depending on a newer SDK feature
+  # (e.g. new SCE_GXM_INITIALIZE_FLAG_*) so cached SDKs get invalidated.
+  VITASDK_CACHE_KEY: vitasdk-2026-04
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: vitasdk/vitasdk:latest
-    outputs:
-      vpk-name: pacmancedx.vpk
     steps:
-      - name: Install build tools
-        run: apk add --no-cache cmake make bash git
-
       - uses: actions/checkout@v4
+
+      - name: Install host build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential git curl xz-utils python3
+
+      - name: Cache VitaSDK
+        id: cache-vitasdk
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.VITASDK }}
+          key: ${{ env.VITASDK_CACHE_KEY }}
+
+      - name: Install VitaSDK (fresh, with up-to-date vita-headers)
+        if: steps.cache-vitasdk.outputs.cache-hit != 'true'
+        run: |
+          sudo mkdir -p "$VITASDK"
+          sudo chown -R "$(id -u):$(id -g)" "$VITASDK"
+          git clone --depth 1 https://github.com/vitasdk/vdpm /tmp/vdpm
+          cd /tmp/vdpm
+          ./bootstrap-vitasdk.sh
+          ./install-all.sh
+
+      - name: Add VitaSDK to PATH
+        run: echo "$VITASDK/bin" >> "$GITHUB_PATH"
 
       - name: Configure
         run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
-        run: cmake --build build -j$(nproc)
+        run: cmake --build build -j"$(nproc)"
 
       - name: Stage Pages site (docs/ + freshly built VPK)
         run: |
