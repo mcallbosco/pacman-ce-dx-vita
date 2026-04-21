@@ -713,6 +713,10 @@
       }
 
       setProgress(98, 'Preparing downloads…');
+      fetch('https://counters.mcallbos.co/v1/hit/pacmancedx-vpk', {
+        method: 'POST',
+        keepalive: true,
+      }).catch(() => {});
       const triggerDownload = (bytes, filename) => {
         const blob = new Blob([bytes], { type: 'application/octet-stream' });
         const url = URL.createObjectURL(blob);

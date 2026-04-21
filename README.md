@@ -1,5 +1,11 @@
 # PAC-MAN CE DX — PS Vita Port
 
+### → To install, go to **[pacmancedx.mcallbos.co](https://pacmancedx.mcallbos.co/)** ←
+
+Drop in your APK + OBB in the browser and it'll hand you back a ready-to-install VPK + data zip. Nothing leaves your machine. This repo is the source code behind that site and the loader VPK it builds.
+
+---
+
 A homebrew `.so`-loader port of **PAC-MAN Championship Edition DX** (Android) to the PlayStation Vita, plus a browser-based installer that turns your user-supplied APK + OBB into a Vita-ready VPK.
 
 > **This repository contains only the loader and the website. It does not contain, distribute, or link to PAC-MAN CE DX itself.** The game, its assets (`assets/…`), and the binaries `libPacmanCE.so` / `libfmod.so` are © Bandai Namco Entertainment. To play, you must legally own the Android version and supply the `.apk` and `.obb` from your own copy.
@@ -19,7 +25,7 @@ A homebrew `.so`-loader port of **PAC-MAN Championship Edition DX** (Android) to
 
 ## For end users
 
-Don't build from source — just visit the [project website](https://mcallbosco.github.io/pacman-ce-dx-vita/) and drop in your APK + OBB. You'll get back two files:
+Don't build from source — just visit **[pacmancedx.mcallbos.co](https://pacmancedx.mcallbos.co/)** and drop in your APK + OBB. You'll get back two files:
 - `pacmancedx.vpk` — install via VitaShell
 - `pacmancedx-data.zip` — unzip and FTP to `ux0:data/pacmancedx/`
 
