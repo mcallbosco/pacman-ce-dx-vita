@@ -712,34 +712,33 @@
         clearInterval(ticker);
       }
 
-      setProgress(98, 'Preparing downloads…');
+      setProgress(98, 'Bundling into a single zip…');
       fetch('https://counters.mcallbos.co/v1/hit/pacmancedx-vpk', {
         method: 'POST',
         keepalive: true,
       }).catch(() => {});
-      const triggerDownload = (bytes, filename) => {
-        const blob = new Blob([bytes], { type: 'application/octet-stream' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 60_000);
-      };
-      triggerDownload(vpkBytes, 'pacmancedx.vpk');
-      // Some browsers suppress back-to-back automatic downloads; a tiny
-      // delay between them reliably gets both through.
-      await new Promise((r) => setTimeout(r, 400));
-      triggerDownload(dataBytes, 'pacmancedx-data.zip');
+      // Browsers warn / block when a page triggers multiple downloads in a
+      // row, so wrap both artifacts in one outer zip.
+      const bundleBytes = await packStored({
+        'pacmancedx.vpk': vpkBytes,
+        'pacmancedx-data.zip': dataBytes,
+      });
+      const blob = new Blob([bundleBytes], { type: 'application/zip' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pacmancedx.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
 
       setProgress(
         100,
-        `Done — VPK ${fmtBytes(vpkBytes.length)}, data ${fmtBytes(dataBytes.length)}.`
+        `Done — bundle ${fmtBytes(bundleBytes.length)} (VPK ${fmtBytes(vpkBytes.length)}, data ${fmtBytes(dataBytes.length)}).`
       );
       log(
-        'All done. Unzip the data zip on your PC, FTP the pacmancedx folder to ux0:data/, then copy the VPK to the Vita and install it in VitaShell.',
+        'All done. Unzip pacmancedx.zip — inside you\'ll find pacmancedx.vpk (install with VitaShell) and pacmancedx-data.zip (unzip and FTP the pacmancedx folder to ux0:data/).',
         'ok'
       );
     } catch (err) {

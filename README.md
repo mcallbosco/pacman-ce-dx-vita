@@ -2,7 +2,7 @@
 
 ### → To install, go to **[pacmancedx.mcallbos.co](https://pacmancedx.mcallbos.co/)** ←
 
-Drop in your APK + OBB in the browser and it'll hand you back a ready-to-install VPK + data zip. Nothing leaves your machine. This repo is the source code behind that site and the loader VPK it builds.
+Drop in your APK + OBB in the browser and it'll hand you back a single `pacmancedx.zip` containing the ready-to-install VPK and the data zip. Nothing leaves your machine. This repo is the source code behind that site and the loader VPK it builds.
 
 ---
 
@@ -25,7 +25,7 @@ A homebrew `.so`-loader port of **PAC-MAN Championship Edition DX** (Android) to
 
 ## For end users
 
-Don't build from source — just visit **[pacmancedx.mcallbos.co](https://pacmancedx.mcallbos.co/)** and drop in your APK + OBB. You'll get back two files:
+Don't build from source — just visit **[pacmancedx.mcallbos.co](https://pacmancedx.mcallbos.co/)** and drop in your APK + OBB. You'll get back a single `pacmancedx.zip`. Unzip it and you'll have:
 - `pacmancedx.vpk` — install via VitaShell
 - `pacmancedx-data.zip` — unzip and FTP to `ux0:data/pacmancedx/`
 
