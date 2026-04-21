@@ -701,27 +701,24 @@
         setProgress(fakePct, 'Packing…');
       }, 150);
 
-      let vpkBytes, dataBytes;
+      let vpkBytes;
       try {
         vpkBytes = await packStored(vpkEntries);
         log(`Built VPK: ${fmtBytes(vpkBytes.length)}`, 'ok');
-        setProgress(88, `Packing data zip (${Object.keys(dataEntries).length} entries)…`);
-        dataBytes = await packStored(dataEntries);
-        log(`Built data zip: ${fmtBytes(dataBytes.length)}`, 'ok');
       } finally {
         clearInterval(ticker);
       }
 
-      setProgress(98, 'Bundling into a single zip…');
+      setProgress(95, 'Bundling VPK + data folder into a single zip…');
       fetch('https://counters.mcallbos.co/v1/hit/pacmancedx-vpk', {
         method: 'POST',
         keepalive: true,
       }).catch(() => {});
-      // Browsers warn / block when a page triggers multiple downloads in a
-      // row, so wrap both artifacts in one outer zip.
+      // Single download: VPK at the root + data laid out as the
+      // pacmancedx/ folder users will FTP into ux0:data/.
       const bundleBytes = await packStored({
         'pacmancedx.vpk': vpkBytes,
-        'pacmancedx-data.zip': dataBytes,
+        ...dataEntries,
       });
       const blob = new Blob([bundleBytes], { type: 'application/zip' });
       const url = URL.createObjectURL(blob);
@@ -735,10 +732,10 @@
 
       setProgress(
         100,
-        `Done — bundle ${fmtBytes(bundleBytes.length)} (VPK ${fmtBytes(vpkBytes.length)}, data ${fmtBytes(dataBytes.length)}).`
+        `Done — bundle ${fmtBytes(bundleBytes.length)} (VPK ${fmtBytes(vpkBytes.length)}).`
       );
       log(
-        'All done. Unzip pacmancedx.zip — inside you\'ll find pacmancedx.vpk (install with VitaShell) and pacmancedx-data.zip (unzip and FTP the pacmancedx folder to ux0:data/).',
+        'All done. Unzip pacmancedx.zip — inside you\'ll find pacmancedx.vpk (install with VitaShell) and the pacmancedx/ folder (FTP it to ux0:data/).',
         'ok'
       );
     } catch (err) {
