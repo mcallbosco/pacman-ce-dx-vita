@@ -47,19 +47,23 @@ jobs:
           path: ${{ env.VITASDK }}
           key: ${{ env.VITASDK_CACHE_KEY }}
 
-      - name: Install VitaSDK (pinned autobuild tarball + vdpm packages)
+      - name: Install VitaSDK (pinned autobuild + latest headers + vdpm packages)
         if: steps.cache-vitasdk.outputs.cache-hit != 'true'
         run: |
-          # Lay down the pinned toolchain tarball as the base, then use vdpm
-          # to add optional packages (vitaGL, vitaShaRK, etc.) on top. We
-          # skip vdpm's bootstrap-vitasdk.sh because it always pulls the
-          # latest autobuild, which is what we're pinning away from.
+          # 1) Pinned toolchain tarball as base — avoids the GCC 15/binutils
+          # break that landed in autobuilds >= v2.536.
           rm -rf "$VITASDK"
           mkdir -p "$VITASDK"
           url="https://github.com/vitasdk/autobuilds/releases/download/${VITASDK_AUTOBUILD_TAG}/${VITASDK_AUTOBUILD_ASSET}"
           curl -fsSL "$url" -o /tmp/vitasdk.tar.bz2
           tar -xjf /tmp/vitasdk.tar.bz2 -C "$VITASDK" --strip-components=1
           rm /tmp/vitasdk.tar.bz2
+          # 2) Overlay latest vita-headers — vitaGL needs SCE_GXM_INITIALIZE_FLAG_*
+          # values that postdate the v2.535 tarball's bundled headers. These
+          # are header-only defines, so no stub regeneration is needed.
+          git clone --depth 1 https://github.com/vitasdk/vita-headers /tmp/vita-headers
+          cp -r /tmp/vita-headers/include/. "$VITASDK/arm-vita-eabi/include/"
+          # 3) vdpm packages (vitaGL deps, etc.) layered on top.
           git clone --depth 1 https://github.com/vitasdk/vdpm /tmp/vdpm
           cd /tmp/vdpm
           ./install-all.sh
