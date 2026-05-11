@@ -47,15 +47,22 @@ jobs:
           path: ${{ env.VITASDK }}
           key: ${{ env.VITASDK_CACHE_KEY }}
 
-      - name: Install VitaSDK (pinned autobuild tarball)
+      - name: Install VitaSDK (pinned autobuild tarball + vdpm packages)
         if: steps.cache-vitasdk.outputs.cache-hit != 'true'
         run: |
+          # Lay down the pinned toolchain tarball as the base, then use vdpm
+          # to add optional packages (vitaGL, vitaShaRK, etc.) on top. We
+          # skip vdpm's bootstrap-vitasdk.sh because it always pulls the
+          # latest autobuild, which is what we're pinning away from.
           rm -rf "$VITASDK"
           mkdir -p "$VITASDK"
           url="https://github.com/vitasdk/autobuilds/releases/download/${VITASDK_AUTOBUILD_TAG}/${VITASDK_AUTOBUILD_ASSET}"
           curl -fsSL "$url" -o /tmp/vitasdk.tar.bz2
           tar -xjf /tmp/vitasdk.tar.bz2 -C "$VITASDK" --strip-components=1
           rm /tmp/vitasdk.tar.bz2
+          git clone --depth 1 https://github.com/vitasdk/vdpm /tmp/vdpm
+          cd /tmp/vdpm
+          ./install-all.sh
 
       - name: Add VitaSDK to PATH
         run: echo "$VITASDK/bin" >> "$GITHUB_PATH"
